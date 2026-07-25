@@ -1,0 +1,8 @@
+# Temporary server scripts
+test_bind.ps1
+generate_icons.ps1
+start_server.ps1
+
+# OS files
+.DS_Store
+Thumbs.db
