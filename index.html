@@ -2,17 +2,23 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ChronoPulse - Alarm, Stopwatch & Timer</title>
   
   <!-- PWA Metadata & Theme -->
   <meta name="theme-color" content="#6366f1">
   <meta name="description" content="A feature-rich PWA Alarm Clock, Stopwatch, and Countdown Timer built with HTML5, CSS3, and JavaScript Web Audio API.">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  
+  <!-- Manifest & Favicons -->
   <link rel="manifest" href="manifest.json">
   <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
-  <link rel="apple-touch-icon" href="icon-192.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="icon-192.png">
+
+  <!-- iOS PWA Capabilities -->
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="ChronoPulse">
 
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -63,14 +69,6 @@
           <span id="live-clock-period" class="live-time-period">AM</span>
         </div>
         <div id="live-clock-date" class="live-date-display">Loading date...</div>
-      </div>
-
-      <!-- Mobile Audio & Silent Switch Guidance Banner -->
-      <div id="mobile-audio-notice" class="audio-notice-card">
-        <div class="notice-icon">🔔</div>
-        <div class="notice-text">
-          <strong>Mobile Audio Tip:</strong> Please ensure your phone's physical Silent/Ringer switch is turned <strong>OFF</strong> and media volume is up so alarm tones can sound.
-        </div>
       </div>
 
       <!-- Alarms List Header -->

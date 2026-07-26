@@ -1,9 +1,6 @@
 // Service Worker for ChronoPulse PWA
-// Provides offline caching for core app assets
-
-const CACHE_NAME = 'chronopulse-v1';
+const CACHE_NAME = 'chronopulse-v2';
 const ASSETS_TO_CACHE = [
-  './',
   './index.html',
   './styles.css',
   './app.js',
@@ -12,18 +9,21 @@ const ASSETS_TO_CACHE = [
   './icon-512.png'
 ];
 
-// Install Event: Cache app resources
+// 1. Install Event: Cache essential assets safely
 self.addEventListener('install', (event) => {
   console.log('[Service Worker] Installing...');
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
       console.log('[Service Worker] Caching app shell assets');
-      return cache.addAll(ASSETS_TO_CACHE);
+      // Use Promise.allSettled so one missing file doesn't break installation
+      return Promise.allSettled(
+        ASSETS_TO_CACHE.map((url) => cache.add(url))
+      );
     }).then(() => self.skipWaiting())
   );
 });
 
-// Activate Event: Clean up old caches
+// 2. Activate Event: Clean up old caches
 self.addEventListener('activate', (event) => {
   console.log('[Service Worker] Activating...');
   event.waitUntil(
@@ -40,35 +40,60 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// Fetch Event: Serve cached assets when offline, update from network when online
+// 3. Fetch Event: Stale-While-Revalidate strategy
 self.addEventListener('fetch', (event) => {
-  // Only handle GET requests
   if (event.request.method !== 'GET') return;
+
+  // Skip browser extension requests
+  if (!event.request.url.startsWith('http')) return;
 
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
-      if (cachedResponse) {
-        // Return cached version, update cache in background
-        fetch(event.request).then((networkResponse) => {
-          if (networkResponse && networkResponse.status === 200) {
-            caches.open(CACHE_NAME).then((cache) => {
-              cache.put(event.request, networkResponse);
-            });
-          }
-        }).catch(() => {/* Offline network fetch fail */});
-
-        return cachedResponse;
-      }
-
-      // If not in cache, fetch from network
-      return fetch(event.request).then((networkResponse) => {
-        return networkResponse;
-      }).catch(() => {
-        // Optional offline fallback for navigation
-        if (event.request.mode === 'navigate') {
-          return caches.match('./index.html');
+      const fetchPromise = fetch(event.request).then((networkResponse) => {
+        if (networkResponse && networkResponse.status === 200 && networkResponse.type === 'basic') {
+          const responseToCache = networkResponse.clone();
+          caches.open(CACHE_NAME).then((cache) => {
+            cache.put(event.request, responseToCache);
+          });
         }
-      });
+        return networkResponse;
+      }).catch(() => {/* Offline fallback */});
+
+      return cachedResponse || fetchPromise;
+    })
+  );
+});
+
+// 4. Background Alarm Notification Handling (Fixes Background Alarms)
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SCHEDULE_ALARM') {
+    const delay = event.data.time - Date.now();
+    
+    if (delay > 0) {
+      setTimeout(() => {
+        self.registration.showNotification('⏰ Alarm Ringing!', {
+          body: event.data.label || 'ChronoPulse Alarm is going off!',
+          icon: './icon-192.png',
+          badge: './icon-192.png',
+          vibrate: [200, 100, 200, 100, 200],
+          tag: 'chronopulse-alarm',
+          requireInteraction: true,
+          renotify: true
+        });
+      }, delay);
+    }
+  }
+});
+
+// 5. Open App when User Taps Notification
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+      if (clientList.length > 0) {
+        return clientList[0].focus();
+      }
+      return clients.openWindow('./index.html');
     })
   );
 });
